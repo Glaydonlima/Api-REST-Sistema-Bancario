@@ -161,75 +161,32 @@ const extratoTransacao = async (req, res) => {
   }
 };
 
+const formataString = (string) => {
+  return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+};
+
 const filtrarTransacaoPorCategoria = async (req, res) => {
   try {
     const requisicoes = req.query;
-    console.log(typeof requisicoes.filtro);
     const idUsuario = req.usuario.id;
     const arrayResposta = [];
     const filtrosExistentes = [];
     const categorias = await db.listarCategorias();
-    console.log(categorias);
 
     if (typeof requisicoes.filtro === "string") {
+      const filtroFormatado = formataString(requisicoes.filtro);
       const incluiFiltro = categorias.some((categoria) =>
-        categoria.descricao
-          .toLowerCase()
-          .includes(requisicoes.filtro.toLowerCase())
+        categoria.descricao.toLowerCase().includes(filtroFormatado.toLowerCase())
       );
-      console.log(incluiFiltro);
+
       if (!incluiFiltro) {
-        return res
-          .status(400)
-          .json({ mensagem: "Filtro informado não existe" });
+        return res.status(400).json({ mensagem: "Filtro informado não existe" });
       }
 
-      const transacoes = await db.pegarTransacaoPorTipo(
-        requisicoes.filtro.charAt(0).toUpperCase() +
-          requisicoes.filtro.slice(1).toLowerCase(),
-        idUsuario
-      );
-      for (let transacao of transacoes) {
-        const categoriaTransacao = await db.pegarCategoriaPorId(
-          transacao.categoria_id
-        );
-
-        const arrayFormatado = {
-          id: transacao.id,
-          tipo: transacao.saida,
-          descricao: transacao.descricao,
-          valor: transacao.valor,
-          data: transacao.data,
-          usuario_id: transacao.usuario_id,
-          categoria_id: transacao.categoria_id,
-          categoria_nome: categoriaTransacao.descricao,
-        };
-        return res.status(200).json(arrayFormatado);
-      }
-    }
-
-    for (let filtro of requisicoes.filtro) {
-      const categoriasFiltradas = categorias.filter((categoria) =>
-        categoria.descricao.includes(
-          filtro.charAt(0).toUpperCase() + filtro.slice(1).toLowerCase()
-        )
-      );
-      filtrosExistentes.push(...categoriasFiltradas);
-    }
-
-    if (filtrosExistentes.length !== requisicoes.filtro.length) {
-      return res.status(400).json({ mensagem: "Filtro informado não existe" });
-    }
-    for (let tipo of requisicoes.filtro) {
-      const transacoes = await db.pegarTransacaoPorTipo(
-        tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase(),
-        idUsuario
-      );
+      const transacoes = await db.pegarTransacaoPorTipo(filtroFormatado, idUsuario);
 
       for (let transacao of transacoes) {
-        const categoriaTransacao = await db.pegarCategoriaPorId(
-          transacao.categoria_id
-        );
+        const categoriaTransacao = await db.pegarCategoriaPorId(transacao.categoria_id);
 
         const arrayFormatado = {
           id: transacao.id,
@@ -244,14 +201,49 @@ const filtrarTransacaoPorCategoria = async (req, res) => {
 
         arrayResposta.push(arrayFormatado);
       }
+    } else if (Array.isArray(requisicoes.filtro)) {
+      for (let filtro of requisicoes.filtro) {
+        const filtroFormatado = formataString(filtro);
+        const categoriasFiltradas = categorias.filter((categoria) =>
+          categoria.descricao.includes(filtroFormatado)
+        );
+        filtrosExistentes.push(...categoriasFiltradas);
+      }
 
-      return res.status(200).json(arrayResposta);
+      if (filtrosExistentes.length !== requisicoes.filtro.length) {
+        return res.status(400).json({ mensagem: "Filtro informado não existe" });
+      }
+
+      for (let tipo of requisicoes.filtro) {
+        const tipoFormatado = formataString(tipo);
+        const transacoes = await db.pegarTransacaoPorTipo(tipoFormatado, idUsuario);
+
+        for (let transacao of transacoes) {
+          const categoriaTransacao = await db.pegarCategoriaPorId(transacao.categoria_id);
+
+          const arrayFormatado = {
+            id: transacao.id,
+            tipo: transacao.saida,
+            descricao: transacao.descricao,
+            valor: transacao.valor,
+            data: transacao.data,
+            usuario_id: transacao.usuario_id,
+            categoria_id: transacao.categoria_id,
+            categoria_nome: categoriaTransacao.descricao,
+          };
+
+          arrayResposta.push(arrayFormatado);
+        }
+      }
     }
+
+    return res.status(200).json(arrayResposta);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ mensagem: "Erro interno do servidor" });
   }
 };
+
 
 module.exports = {
   filtrarTransacaoPorCategoria,
