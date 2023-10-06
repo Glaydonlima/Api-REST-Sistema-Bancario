@@ -34,8 +34,8 @@ module.exports = {
           email
       from usuarios
       where id = $1`;
-  const { rows, rowCount } = await pool.query(sql, [id]);
-  return { rows: rows[0], rowCount };
+    const { rows, rowCount } = await pool.query(sql, [id]);
+    return { rows: rows[0], rowCount };
   },
 
   async pegarSenhaUsuarioPorEmail(email, senha) {
@@ -47,8 +47,33 @@ module.exports = {
   async listarCategorias() {
     const sql = "select * from categorias";
     const { rows } = await pool.query(sql);
-    return rows; 
-  
-  }
-  
+    return rows;
+  },
+
+  async pegarCategoriaPorId(categoria_id) {
+    const sql = "select descricao from categorias where id = $1";
+    const { rows } = await pool.query(sql, [categoria_id]);
+    return rows[0];
+  },
+
+  async cadastrarTransacao(
+    descricao,
+    valor,
+    data,
+    categoria_id,
+    usuario_id,
+    tipo
+  ) {
+    const sql =
+      "insert into transacoes(descricao, valor, data, categoria_id, usuario_id, tipo)values ($1, $2, $3, $4, $5, $6) returning *";
+    const { rows } = await pool.query(sql, [
+      descricao,
+      valor,
+      data,
+      categoria_id,
+      usuario_id,
+      tipo,
+    ]);
+    return rows[0];
+  },
 };
