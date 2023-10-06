@@ -112,5 +112,12 @@ module.exports = {
     const sql = "select * from transacoes where usuario_id = $1";
     const { rows } = await pool.query(sql, [id]);
     return rows;
+  },
+
+  async pegarTransacaoPorTipo(descricao, idUsuario){
+    const sql = "select * from transacoes where descricao = $1 and usuario_id = $2 order by id";
+    const { rows } = await pool.query(sql, [descricao, idUsuario]);
+    return rows;
   }
+
 };
