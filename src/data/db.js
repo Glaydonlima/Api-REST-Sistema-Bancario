@@ -56,6 +56,12 @@ module.exports = {
     return rows[0];
   },
 
+  async pegarTransacaoPorId(id) {
+    const sql = "select * from transacoes where id = $1";
+    const { rows } = await pool.query(sql, [id]);
+    return rows[0];
+  },
+
   async cadastrarTransacao(
     descricao,
     valor,
@@ -76,4 +82,35 @@ module.exports = {
     ]);
     return rows[0];
   },
+  async modificarTransacao(
+    id,
+    descricao,
+    valor,
+    data,
+    categoria_id,
+    tipo
+  ) {
+    const sql =
+      "update transacoes set descricao = $1, valor = $2, data = $3, categoria_id = $4, tipo = $5 where id = $6";
+    const { rows } = await pool.query(sql, [
+      descricao,
+      valor,
+      data,
+      categoria_id,
+      tipo,
+      id,
+    ]);
+  },
+
+  async deletarTansacao(id){
+    const sql = "delete from transacoes where id = $1";
+    const { rows } = await pool.query(sql, [id]);
+    return rows[0];
+  },
+
+  async pegarTransacoesDoUsuarioPorId(id){
+    const sql = "select * from transacoes where usuario_id = $1";
+    const { rows } = await pool.query(sql, [id]);
+    return rows;
+  }
 };
