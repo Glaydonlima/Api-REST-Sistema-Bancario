@@ -12,7 +12,7 @@ module.exports = async function (req, res, next) {
   const usuario = tokenAutentificacao.pegarUsuario(token);
 
   if (!usuario) {
-    res.status(401).json({ mensagem: "Usuário não autenticado" });
+    return res.status(401).json({ mensagem: "Usuário não autenticado" });
   }
 
   req.usuario = usuario;

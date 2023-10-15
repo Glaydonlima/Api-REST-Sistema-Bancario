@@ -115,7 +115,6 @@ const deletarTransacao = async (req, res) => {
   try {
     const { id } = req.params;
     const pegarTransacao = await db.pegarTransacaoPorId(id);
-    console.log(pegarTransacao);
     if (!pegarTransacao) {
       return res.status(400).json({
         mensagem: "Transação não encontrada.",
@@ -141,7 +140,6 @@ const extratoTransacao = async (req, res) => {
     let saidas = 0;
     const { id } = req.usuario;
     const transacoes = await db.pegarTransacoesDoUsuarioPorId(id);
-    console.log(transacoes);
     for (let transacao of transacoes) {
       if (transacao.tipo === "entrada") {
         entradas += Number(transacao.valor);
