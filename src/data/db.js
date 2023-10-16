@@ -27,6 +27,13 @@ module.exports = {
     return rows;
   },
 
+  async alterarUsuario(nome, email, senha, id) {
+    const sql =
+      "update usuarios set nome = $1, email = $2, senha = $3 where id = $4";
+    const valores = [nome, email, senha, id];
+    await pool.query(sql, valores);
+  },
+
   async pegarUsuarioPorId(id) {
     const sql = `select
           id,
@@ -82,14 +89,7 @@ module.exports = {
     ]);
     return rows[0];
   },
-  async modificarTransacao(
-    id,
-    descricao,
-    valor,
-    data,
-    categoria_id,
-    tipo
-  ) {
+  async modificarTransacao(id, descricao, valor, data, categoria_id, tipo) {
     const sql =
       "update transacoes set descricao = $1, valor = $2, data = $3, categoria_id = $4, tipo = $5 where id = $6";
     const { rows } = await pool.query(sql, [
@@ -102,22 +102,22 @@ module.exports = {
     ]);
   },
 
-  async deletarTansacao(id){
+  async deletarTansacao(id) {
     const sql = "delete from transacoes where id = $1";
     const { rows } = await pool.query(sql, [id]);
     return rows[0];
   },
 
-  async pegarTransacoesDoUsuarioPorId(id){
+  async pegarTransacoesDoUsuarioPorId(id) {
     const sql = "select * from transacoes where usuario_id = $1";
     const { rows } = await pool.query(sql, [id]);
     return rows;
   },
 
-  async pegarTransacaoPorTipo(descricao, idUsuario){
-    const sql = "select * from transacoes where descricao = $1 and usuario_id = $2 order by id";
+  async pegarTransacaoPorTipo(descricao, idUsuario) {
+    const sql =
+      "select * from transacoes where descricao = $1 and usuario_id = $2 order by id";
     const { rows } = await pool.query(sql, [descricao, idUsuario]);
     return rows;
-  }
-
+  },
 };

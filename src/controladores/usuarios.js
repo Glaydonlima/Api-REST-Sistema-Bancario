@@ -17,7 +17,6 @@ const registrarUsuario = async (req, res) => {
     }
 
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    console.log(senhaCriptografada);
     const usuario = await db.cadastrarUsuario({
       nome,
       email,
@@ -53,7 +52,7 @@ const loginUsuario = async (req, res) => {
       {
         id: usuario.id,
         nome: usuario.nome,
-        email
+        email,
       },
       {
         token,
@@ -64,4 +63,44 @@ const loginUsuario = async (req, res) => {
   }
 };
 
-module.exports = { loginUsuario, registrarUsuario };
+const procurarUsuario = async (req, res) => {
+  try {
+    const { id } = req.usuario;
+    const usuario = (await db.pegarUsuarioPorId(id)).rows;
+    return res.status(200).json(usuario);
+  } catch (error) {
+    return res.status(500).json({ mensagem: "Erro interno do servidor" });
+  }
+};
+
+const atualizarUsuario = async (req, res) => {
+  try {
+    const { id } = req.usuario;
+    const { nome, email, senha } = req.body;
+    if (!nome || !email || !senha) {
+      return res.status(400).json({
+        mensagem: "Todos os campos devem ser preenchidos",
+      });
+    }
+
+    if (await db.existeEmailUsuario(email)) {
+      return res.status(400).json({
+        mensagem:
+          "O e-mail informado já está sendo utilizado por outro usuário.",
+      });
+    }
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+
+    await db.alterarUsuario(nome, email, senhaCriptografada, id);
+    return res.status(201).send();
+  } catch (error) {
+    return res.status(500).json({ mensagem: "Erro interno do servidor" });
+  }
+};
+
+module.exports = {
+  atualizarUsuario,
+  procurarUsuario,
+  loginUsuario,
+  registrarUsuario,
+};
