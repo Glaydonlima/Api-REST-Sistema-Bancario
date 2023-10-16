@@ -31,7 +31,9 @@ const validarId = (id) => {
 
 const validarCategoria = async (categoria_id) => {
   const categorias = await db.listarCategorias();
-  const existeCategoria = categorias.find((categoria) => categoria.id == categoria_id);
+  const existeCategoria = categorias.find(
+    (categoria) => categoria.id == categoria_id
+  );
   if (!existeCategoria) {
     throw new Error("A categoria informada não existe");
   }
@@ -44,6 +46,7 @@ const mensagemError = () => {
 const formataString = (string) => {
   return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
 };
+
 
 module.exports = {
   validarId,

@@ -1,6 +1,4 @@
 const db = require("../data/db");
-const bcrypt = require("bcrypt");
-const tokenAutentificacao = require("../data/token-autentificacao");
 const {
   verificarCamposPreenchidos,
   verificarEmailExistente,
@@ -23,7 +21,21 @@ const registrarUsuario = async (req, res) => {
     });
     return res.status(201).json(usuario);
   } catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+    let statusCode;
+    let errorMessage = error.message;
+    switch (error.message) {
+      case "Todos os campos devem ser preenchidos.":
+        statusCode = 400;
+        break;
+      case "Já existe usuário cadastrado com o e-mail informado.":
+        statusCode = 400;
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Erro interno do servidor";
+        break;
+    }
+    return res.status(statusCode).json({ mensagem: errorMessage });
   }
 };
 
@@ -37,7 +49,7 @@ const loginUsuario = async (req, res) => {
     await verificarSenha(senha, usuario.senha);
     const token = criarToken(usuario);
 
-    return res.status(201).json([
+    return res.status(200).json([
       {
         id: usuario.id,
         nome: usuario.nome,
@@ -48,7 +60,18 @@ const loginUsuario = async (req, res) => {
       },
     ]);
   } catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+    let statusCode;
+    let errorMessage = error.message;
+    switch (error.message) {
+      case "Email ou senha inválida":
+        statusCode = 400;
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Erro interno do servidor";
+        break;
+    }
+    return res.status(statusCode).json({ mensagem: errorMessage });
   }
 };
 
@@ -73,8 +96,21 @@ const atualizarUsuario = async (req, res) => {
 
     await db.alterarUsuario(nome, email, senhaCriptografada, id);
     return res.status(201).send();
-  }  catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+  } catch (error) {
+    let statusCode;
+    let errorMessage;
+    switch (error.message) {
+      case "Todos os campos devem ser preenchidos.":
+      case "Já existe usuário cadastrado com o e-mail informado.":
+        statusCode = 400;
+        errorMessage = error.message;
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Erro interno do servidor";
+        break;
+    }
+    return res.status(statusCode).json({ mensagem: errorMessage });
   }
 };
 

@@ -1,11 +1,21 @@
 const db = require("../data/db");
-const { validarId, validarCampos, validarTipo, validarValor, formataString,validarCategoria, mensagemError } = require("../utils/utils-transacoes");
+const {
+  validarId,
+  validarCampos,
+  validarTipo,
+  validarValor,
+  formataString,
+  validarCategoria,
+} = require("../utils/utils-transacoes");
 
 const cadastrarTransacao = async (req, res) => {
   try {
     const { descricao, valor, data, categoria_id, tipo } = req.body;
 
-    validarCampos([descricao, valor, data, categoria_id, tipo], "Todos os campos devem ser preenchidos");
+    validarCampos(
+      [descricao, valor, data, categoria_id, tipo],
+      "Todos os campos devem ser preenchidos"
+    );
     validarTipo(tipo);
     validarValor(valor);
     await validarCategoria(categoria_id);
@@ -33,7 +43,23 @@ const cadastrarTransacao = async (req, res) => {
     };
     return res.status(201).json(arrayResposta);
   } catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+    let statusCode;
+    let errorMessage;
+    switch (error.message) {
+      case "Todos os campos devem ser preenchidos":
+      case "Campo tipo deve ser informado corretamente":
+      case "Campo valor deve ser informado corretamente":
+      case "O ID deve ser um número positivo":
+      case "A categoria informada não existe":
+        statusCode = 400;
+        errorMessage = error.message;
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Erro interno do servidor";
+        break;
+    }
+    return res.status(statusCode).json({ mensagem: errorMessage });
   }
 };
 
@@ -68,7 +94,23 @@ const modificarTransacao = async (req, res) => {
 
     return res.status(204).send();
   } catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+    let statusCode;
+    let errorMessage;
+    switch (error.message) {
+      case "Todos os campos devem ser preenchidos":
+      case "Campo tipo deve ser informado corretamente":
+      case "Campo valor deve ser informado corretamente":
+      case "O ID deve ser um número positivo":
+      case "A categoria informada não existe":
+        statusCode = 400;
+        errorMessage = error.message;
+        break;
+      default:
+        statusCode = 500;
+        errorMessage = "Erro interno do servidor";
+        break;
+    }
+    return res.status(statusCode).json({ mensagem: errorMessage });
   }
 };
 
@@ -84,7 +126,7 @@ const deletarTransacao = async (req, res) => {
     }
 
     if (pegarTransacao.usuario_id !== req.usuario.id) {
-      return res.status(400).json({
+      return res.status(401).json({
         mensagem: "Você não tem autorização de alterar essa transação",
       });
     }
@@ -92,7 +134,11 @@ const deletarTransacao = async (req, res) => {
     await db.deletarTansacao(id);
     return res.status(204).send();
   } catch (error) {
-    return res.status(500).json({ mensagem: error.message });
+    if (error.message === "O ID deve ser um número positivo") {
+      return res.status(400).json({ mensagem: error.message });
+    } else {
+      return res.status(500).json({ mensagem: "Erro interno do servidor" });
+    }
   }
 };
 
@@ -119,11 +165,9 @@ const extratoTransacao = async (req, res) => {
 
     res.status(200).json(arrayResposta);
   } catch (error) {
-    console.error("Erro ao obter extrato de transação:", error);
     return res.status(500).json({ mensagem: error.message });
   }
 };
-
 
 const filtrarTransacaoPorCategoria = async (req, res) => {
   try {
@@ -136,17 +180,26 @@ const filtrarTransacaoPorCategoria = async (req, res) => {
     if (typeof requisicoes.filtro === "string") {
       const filtroFormatado = formataString(requisicoes.filtro);
       const incluiFiltro = categorias.some((categoria) =>
-        categoria.descricao.toLowerCase().includes(filtroFormatado.toLowerCase())
+        categoria.descricao
+          .toLowerCase()
+          .includes(filtroFormatado.toLowerCase())
       );
 
       if (!incluiFiltro) {
-        return res.status(400).json({ mensagem: "Filtro informado não existe" });
+        return res
+          .status(400)
+          .json({ mensagem: "Filtro informado não existe" });
       }
 
-      const transacoes = await db.pegarTransacaoPorTipo(filtroFormatado, idUsuario);
+      const transacoes = await db.pegarTransacaoPorTipo(
+        filtroFormatado,
+        idUsuario
+      );
 
       for (let transacao of transacoes) {
-        const categoriaTransacao = await db.pegarCategoriaPorId(transacao.categoria_id);
+        const categoriaTransacao = await db.pegarCategoriaPorId(
+          transacao.categoria_id
+        );
 
         const arrayFormatado = {
           id: transacao.id,
@@ -171,15 +224,22 @@ const filtrarTransacaoPorCategoria = async (req, res) => {
       }
 
       if (filtrosExistentes.length !== requisicoes.filtro.length) {
-        return res.status(400).json({ mensagem: "Filtro informado não existe" });
+        return res
+          .status(400)
+          .json({ mensagem: "Filtro informado não existe" });
       }
 
       for (let tipo of requisicoes.filtro) {
         const tipoFormatado = formataString(tipo);
-        const transacoes = await db.pegarTransacaoPorTipo(tipoFormatado, idUsuario);
+        const transacoes = await db.pegarTransacaoPorTipo(
+          tipoFormatado,
+          idUsuario
+        );
 
         for (let transacao of transacoes) {
-          const categoriaTransacao = await db.pegarCategoriaPorId(transacao.categoria_id);
+          const categoriaTransacao = await db.pegarCategoriaPorId(
+            transacao.categoria_id
+          );
 
           const arrayFormatado = {
             id: transacao.id,
@@ -199,11 +259,9 @@ const filtrarTransacaoPorCategoria = async (req, res) => {
 
     return res.status(200).json(arrayResposta);
   } catch (error) {
-    console.error("Erro ao filtrar transações por categoria:", error);
     return res.status(500).json({ mensagem: error.message });
   }
 };
-
 
 module.exports = {
   filtrarTransacaoPorCategoria,

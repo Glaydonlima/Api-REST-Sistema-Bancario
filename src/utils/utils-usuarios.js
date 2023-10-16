@@ -4,7 +4,7 @@ const tokenAutentificacao = require("../data/token-autentificacao");
 const verificarCamposPreenchidos = (req, res) => {
   const { nome, email, senha } = req.body;
   if (!nome || !email || !senha) {
-    throw new Error("Todos os campos devem ser preenchidos");
+    throw new Error("Todos os campos devem ser preenchidos.");
   }
 };
 
