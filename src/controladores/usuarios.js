@@ -1,22 +1,21 @@
 const db = require("../data/db");
 const bcrypt = require("bcrypt");
 const tokenAutentificacao = require("../data/token-autentificacao");
+const {
+  verificarCamposPreenchidos,
+  verificarEmailExistente,
+  criptografarSenha,
+  verificarSenha,
+  criarToken,
+} = require("../utils/utils-usuarios");
 
 const registrarUsuario = async (req, res) => {
   try {
     const { nome, email, senha } = req.body;
-    if (!nome || !email || !senha) {
-      return res.status(400).json({
-        mensagem: "Todos os campos devem ser preenchidos",
-      });
-    }
-    if (await db.existeEmailUsuario(email)) {
-      return res.status(400).json({
-        mensagem: "Já existe usuário cadastrado com o e-mail informado.",
-      });
-    }
+    verificarCamposPreenchidos(req, res);
+    await verificarEmailExistente(email);
 
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    const senhaCriptografada = await criptografarSenha(senha);
     const usuario = await db.cadastrarUsuario({
       nome,
       email,
@@ -24,7 +23,7 @@ const registrarUsuario = async (req, res) => {
     });
     return res.status(201).json(usuario);
   } catch (error) {
-    return res.status(500).json({ mensagem: "Erro interno do servidor" });
+    return res.status(500).json({ mensagem: error.message });
   }
 };
 
@@ -33,20 +32,10 @@ const loginUsuario = async (req, res) => {
     const { email, senha } = req.body;
     const usuario = await db.pegarSenhaUsuarioPorEmail(email);
     if (!usuario) {
-      return res.status(403).json({
-        mensagem: "Email ou senha invalida",
-      });
+      throw new Error("Email ou senha inválida");
     }
-    const senhaIgual = await bcrypt.compare(senha, usuario.senha);
-    if (!senhaIgual) {
-      return res.status(403).json({
-        mensagem: "Email ou senha invalida",
-      });
-    }
-    const token = tokenAutentificacao.criar({
-      id: usuario.id,
-      nome: usuario.nome,
-    });
+    await verificarSenha(senha, usuario.senha);
+    const token = criarToken(usuario);
 
     return res.status(201).json([
       {
@@ -59,7 +48,7 @@ const loginUsuario = async (req, res) => {
       },
     ]);
   } catch (error) {
-    return res.status(500).json({ mensagem: "Erro interno do servidor" });
+    return res.status(500).json({ mensagem: error.message });
   }
 };
 
@@ -77,24 +66,15 @@ const atualizarUsuario = async (req, res) => {
   try {
     const { id } = req.usuario;
     const { nome, email, senha } = req.body;
-    if (!nome || !email || !senha) {
-      return res.status(400).json({
-        mensagem: "Todos os campos devem ser preenchidos",
-      });
-    }
+    verificarCamposPreenchidos(req, res);
+    await verificarEmailExistente(email);
 
-    if (await db.existeEmailUsuario(email)) {
-      return res.status(400).json({
-        mensagem:
-          "O e-mail informado já está sendo utilizado por outro usuário.",
-      });
-    }
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    const senhaCriptografada = await criptografarSenha(senha);
 
     await db.alterarUsuario(nome, email, senhaCriptografada, id);
     return res.status(201).send();
-  } catch (error) {
-    return res.status(500).json({ mensagem: "Erro interno do servidor" });
+  }  catch (error) {
+    return res.status(500).json({ mensagem: error.message });
   }
 };
 
